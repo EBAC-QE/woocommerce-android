@@ -38,9 +38,7 @@ class CardReaderPaymentDialog : DialogFragment(R.layout.fragment_card_reader_pay
     }
 
     private fun initViewModel() {
-        val manager = (requireActivity().application as WooCommerce).cardReaderManager
-        // TODO card reader: remove !! when cardReaderManager is changed to a nonnullable type in WooCommerce
-        viewModel.start(manager!!)
+        viewModel.start()
     }
 
     private fun initObservers(binding: FragmentCardReaderPaymentBinding) {

@@ -22,6 +22,10 @@ import com.woocommerce.android.cardreader.CardReaderDiscoveryEvents.Succeeded
 import com.woocommerce.android.cardreader.CardReaderManager
 import com.woocommerce.android.databinding.FragmentSettingsCardReaderBinding
 import com.woocommerce.android.extensions.navigateSafely
+import dagger.hilt.EntryPoint
+import dagger.hilt.EntryPoints
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.collect
 import org.wordpress.android.util.AppLog
 
@@ -32,6 +36,15 @@ import org.wordpress.android.util.AppLog
  * or CardReaderDetailFragment.
  */
 class CardReaderSettingsFragment : Fragment(R.layout.fragment_settings_card_reader) {
+    // This code will be removed after migration SettingsActivity to Hilt
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface CardReaderManagerEntryPoint {
+        fun cardReaderManager(): CardReaderManager?
+    }
+
+    private var cardReaderManager: CardReaderManager? = null
+
     companion object {
         const val TAG = "card-reader-settings"
     }
@@ -51,6 +64,9 @@ class CardReaderSettingsFragment : Fragment(R.layout.fragment_settings_card_read
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        cardReaderManager = EntryPoints.get(requireContext().applicationContext, CardReaderManagerEntryPoint::class.java)
+            .cardReaderManager()
 
         val binding = FragmentSettingsCardReaderBinding.bind(view)
         binding.connectReaderButton.setOnClickListener {
@@ -79,7 +95,7 @@ class CardReaderSettingsFragment : Fragment(R.layout.fragment_settings_card_read
         (requireActivity().application as? WooCommerce)?.let { application ->
             // TODO cardreader Move this into a VM
             lifecycleScope.launchWhenResumed {
-                application.cardReaderManager?.readerStatus?.collect { status ->
+                cardReaderManager?.readerStatus?.collect { status ->
                     binding.connectionStatus.text = status.name
                 }
             }
@@ -95,7 +111,7 @@ class CardReaderSettingsFragment : Fragment(R.layout.fragment_settings_card_read
 
     // TODO cardreader move this into a VM
     private fun connectToReader(simulated: Boolean) {
-        getCardReaderManager()?.let { cardReaderManager ->
+        cardReaderManager?.let { cardReaderManager ->
             if (!cardReaderManager.isInitialized) {
                 cardReaderManager.initialize(requireActivity().application)
             }
@@ -115,7 +131,7 @@ class CardReaderSettingsFragment : Fragment(R.layout.fragment_settings_card_read
                         }
                         is ReadersFound -> {
                             if (event.list.isNotEmpty()) {
-                                val success = getCardReaderManager()?.connectToReader(event.list[0]) ?: false
+                                val success = cardReaderManager.connectToReader(event.list[0]) ?: false
                                 Snackbar.make(
                                     requireView(),
                                     "Connecting to reader ${if (success) "succeeded" else "failed"}",
@@ -128,7 +144,4 @@ class CardReaderSettingsFragment : Fragment(R.layout.fragment_settings_card_read
             }
         }
     }
-
-    private fun getCardReaderManager(): CardReaderManager? =
-        (requireActivity().application as? WooCommerce)?.cardReaderManager
 }

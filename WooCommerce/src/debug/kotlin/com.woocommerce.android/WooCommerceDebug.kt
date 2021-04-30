@@ -23,21 +23,7 @@ import javax.inject.Inject
 
 @HiltAndroidApp
 class WooCommerceDebug : WooCommerce() {
-    @Inject lateinit var payStore: WCPayStore
     @Inject lateinit var selectedSite: SelectedSite
-
-    override val cardReaderManager = CardReaderManagerFactory.createCardReaderManager(object : CardReaderStore {
-        override suspend fun getConnectionToken(): String {
-            val result = payStore.fetchConnectionToken(selectedSite.get())
-            return result.model?.token.orEmpty()
-        }
-
-        override suspend fun capturePaymentIntent(id: String): Boolean {
-            // TODO cardreader Invoke capturePayment on WCPayStore
-            delay(1000)
-            return true
-        }
-    })
 
     override fun onCreate() {
         if (FlipperUtils.shouldEnableFlipper(this)) {
